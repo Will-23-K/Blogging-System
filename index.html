@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Postee</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Pacifico&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- Fixed Header -->
+  <header class="app-header">
+    <div class="logo">Postee</div>
+  </header>
+
+  <!-- Top “sidebar” band under header (2030 vibe) -->
+  <section class="topband" aria-label="Discovery">
+    <nav class="chips">
+      <a href="#" class="chip">Trending</a>
+      <a href="#" class="chip">Art & Design</a>
+      <a href="#" class="chip">Music</a>
+      <a href="#" class="chip">Tech</a>
+      <a href="#" class="chip">Explore</a>
+    </nav>
+  </section>
+
+  <main class="container">
+    <!-- Profile / Hero Card -->
+    <section class="profile-card" aria-label="Profile">
+      <div class="profile-main">
+        <img class="avatar" src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=256&auto=format&fit=crop" alt="User profile picture">
+        <div class="identity">
+          <h1 class="username">@alch.dance</h1>
+          <div class="meta-grid">
+            <div class="meta">
+              <span class="meta-label">Followers</span>
+              <span class="meta-value">12.4k</span>
+            </div>
+            <div class="meta">
+              <span class="meta-label">Following</span>
+              <span class="meta-value">327</span>
+            </div>
+            <div class="meta">
+              <span class="meta-label">Posts</span>
+              <span class="meta-value">238</span>
+            </div>
+          </div>
+        </div>
+        <div class="context">
+          <div class="row">
+            <span class="pill">Category: Visual Arts</span>
+            <span class="pill">Location: Cape Town</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pinned posts -->
+    <section class="pinned" aria-label="Pinned posts">
+      <h2 class="section-title">Pinned</h2>
+      <div class="pinned-grid">
+        <article class="pin"></article>
+        <article class="pin"></article>
+        <article class="pin"></article>
+      </div>
+    </section>
+
+    <!-- Make a post composer (UI only) -->
+    <section class="composer" aria-label="Create post">
+      <h2 class="section-title">Create</h2>
+      <div class="composer-card">
+        <textarea class="composer-input" placeholder="Share something breathtaking…"></textarea>
+        <div class="composer-toolbar">
+          <button class="tool" aria-label="Attach image" disabled>🖼️</button>
+          <button class="tool" aria-label="Attach video" disabled>📹</button>
+          <button class="tool" aria-label="Tag people" disabled>🏷️</button>
+          <button class="tool" aria-label="More options" disabled>⋯</button>
+          <button class="publish" disabled>Post</button>
+        </div>
+        <p class="composer-hint">Interactivity will be enabled when we add JavaScript.</p>
+      </div>
+    </section>
+
+    <!-- Feed -->
+    <section class="feed" aria-label="Feed">
+      <!-- Post card -->
+      <article class="post">
+        <!-- Post header (Instagram-like) -->
+        <div class="post-header">
+          <div class="profile-info">
+            <img class="profile-pic" src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?q=80&w=128&auto=format&fit=crop" alt="User profile">
+            <div class="profile-details">
+              <strong>alch.dance</strong>
+              <div class="music-info">
+                <span class="song-title">Blinding Lights</span>
+                <span class="sep">•</span>
+                <span class="song-artist">The Weeknd</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="post-meta">
+            <time class="timestamp" datetime="2025-08-27T08:00:00Z">2h ago</time>
+            <div class="post-settings" aria-haspopup="menu" aria-expanded="false" role="button" tabindex="0">⋯
+              <!-- Dropdown is present for styling; JS will toggle later -->
+              <ul class="settings-dropdown" role="menu">
+                <li role="menuitem">Edit Post</li>
+                <li role="menuitem">Delete Post</li>
+                <li role="menuitem">See Insight</li>
+                <li role="menuitem">Hide Likes</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Media carousel (CSS scroll-snap for now) -->
+        <div class="carousel" aria-label="Post media" data-carousel>
+          <figure class="slide">
+            <img src="https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?q=80&w=1200&auto=format&fit=crop" alt="Post image 1">
+          </figure>
+          <figure class="slide">
+            <img src="https://images.unsplash.com/photo-1526318472351-c75fcf070305?q=80&w=1200&auto=format&fit=crop" alt="Post image 2">
+          </figure>
+          <figure class="slide">
+            <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop" alt="Post image 3">
+          </figure>
+          <figure class="slide">
+            <img src="https://images.unsplash.com/photo-1514512364185-4c2b3f2b3a2a?q=80&w=1200&auto=format&fit=crop" alt="Post image 4">
+          </figure>
+        </div>
+
+        <!-- Caption -->
+        <div class="post-body">
+          <p class="caption">
+            I stitched light and motion into this set. Swipe ➡️
+            <span class="tags">#dance #art #postee</span>
+          </p>
+        </div>
+
+        <!-- Actions (static for now) -->
+        <div class="post-actions" role="group" aria-label="Post actions">
+          <button class="action" aria-label="Like" disabled>♡</button>
+          <button class="action" aria-label="Comment" disabled>💬</button>
+          <button class="action" aria-label="Share" disabled>↗</button>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>© 2025 Postee</p>
+  </footer>
+</body>
+</html>
