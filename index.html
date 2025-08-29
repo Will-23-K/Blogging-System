@@ -5,28 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Postee - Video Creator Platform</title>
   <meta name="description" content="Postee is a modern platform for video creators to share content, connect with audiences, and build their community.">
-<link rel="stylesheet" href="css/style.css">
+  
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="modal.css">
 </head>
 <body>
   <!-- Fixed Header -->
   <header class="app-header">
     <div class="logo">Postee</div>
-   
   </header>
 
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-section">
       <div class="sidebar-title">Main</div>
-      <div class="sidebar-item active">
+      <div class="sidebar-item active" data-page="home">
         <span class="sidebar-icon">🏠</span>
-        <span>Home</span>
+        <span>Profile</span>
       </div>
-      <div class="sidebar-item">
+      <div class="sidebar-item" data-page="search">
         <span class="sidebar-icon">🔍</span>
         <span>Search</span>
       </div>
-      <div class="sidebar-item">
+      <div class="sidebar-item" data-page="feed">
         <span class="sidebar-icon">📺</span>
         <span>Feed</span>
       </div>
@@ -34,11 +36,11 @@
     
     <div class="sidebar-section">
       <div class="sidebar-title">Social</div>
-      <div class="sidebar-item">
+      <div class="sidebar-item" data-page="messages">
         <span class="sidebar-icon">💬</span>
         <span>Messages</span>
       </div>
-      <div class="sidebar-item">
+      <div class="sidebar-item" data-page="notifications">
         <span class="sidebar-icon">🔔</span>
         <span>Notifications</span>
       </div>
@@ -46,19 +48,19 @@
     
     <div class="sidebar-section">
       <div class="sidebar-title">Account</div>
-      <div class="sidebar-item">
+      <div class="sidebar-item" data-page="settings">
         <span class="sidebar-icon">⚙️</span>
         <span>Account Settings</span>
       </div>
-      <div class="sidebar-item">
+      <div class="sidebar-item" data-page="store">
         <span class="sidebar-icon">🛒</span>
         <span>Postee Store</span>
       </div>
-      <div class="sidebar-item">
+      <div class="sidebar-item" data-page="help">
         <span class="sidebar-icon">❓</span>
         <span>Help</span>
       </div>
-      <div class="sidebar-item">
+      <div class="sidebar-item" data-page="logout">
         <span class="sidebar-icon">🚪</span>
         <span>Log Out</span>
       </div>
@@ -78,7 +80,7 @@
     <!-- Profile Card -->
     <section class="profile-card">
       <div class="profile-main">
-        <img class="avatar" src="abstract.png" alt="User profile picture">
+        <img class="avatar" src="assets/images/abstract.png" alt="User profile picture">
         <div class="profile-info">
           <h1 class="username">
             @ywk.creator
@@ -98,15 +100,15 @@
       <div class="meta-grid">
         <div class="meta">
           <div class="meta-label">Followers</div>
-          <div class="meta-value">1.24M</div>
+          <div class="meta-value">1.24b</div>
         </div>
         <div class="meta">
           <div class="meta-label">Following</div>
-          <div class="meta-value">327</div>
+          <div class="meta-value">327k</div>
         </div>
         <div class="meta">
           <div class="meta-label">Posts</div>
-          <div class="meta-value">238</div>
+          <div class="meta-value">238k</div>
         </div>
       </div>
       
@@ -126,12 +128,12 @@
     <section class="pinned">
       <h2 class="section-title">MY FAVOURITE WORK</h2>
       <div class="pinned-grid">
-        <article class="pin"><img src="thumb.png" alt="Pinned work"></article>
-        <article class="pin"><img src="IMG_20230718_162953.jpg" alt="Pinned work"></article>
-        <article class="pin"><img src="IMG_1708.JPG" alt="Pinned work"></article>
-        <article class="pin"><img src="IMG_20230605_163127.jpg" alt="Pinned work"></article>
-        <article class="pin"><img src="IMG_20230708_173209.jpg" alt="Pinned work"></article>
-        <article class="pin"><img src="IMG_20231027_183312.jpg" alt="Pinned work"></article>
+        <article class="pin"><img src="assets/images/thumb.png" alt="Pinned work"></article>
+        <article class="pin"><img src="assets/images/IMG_20230718_162953.jpg" alt="Pinned work"></article>
+        <article class="pin"><img src="assets/images/IMG_1708.JPG" alt="Pinned work"></article>
+        <article class="pin"><img src="assets/images/IMG_20230605_163127.jpg" alt="Pinned work"></article>
+        <article class="pin"><img src="assets/images/IMG_20230708_173209.jpg" alt="Pinned work"></article>
+        <article class="pin"><img src="assets/images/IMG_20231027_183312.jpg" alt="Pinned work"></article>
       </div>
     </section>
 
@@ -242,7 +244,11 @@
     </div>
   </div>
 
-  <script src="js/app.js" defer></script>
-
+  <!-- JavaScript Files -->
+  <script src="helpers.js"></script>
+  <script src="modal.js"></script>
+  <script src="upload.js"></script>
+  <script src="navigation.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
