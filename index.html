@@ -1,158 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Postee</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Postee - Video Creator Platform</title>
+  <meta name="description" content="Postee is a modern platform for video creators to share content, connect with audiences, and build their community.">
+  <style>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Pacifico&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="css/style.css" />
+  </style>
 </head>
 <body>
   <!-- Fixed Header -->
   <header class="app-header">
     <div class="logo">Postee</div>
+   
   </header>
 
-  <!-- Top “sidebar” band under header (2030 vibe) -->
-  <section class="topband" aria-label="Discovery">
-    <nav class="chips">
-      <a href="#" class="chip">Trending</a>
-      <a href="#" class="chip">Art & Design</a>
-      <a href="#" class="chip">Music</a>
-      <a href="#" class="chip">Tech</a>
-      <a href="#" class="chip">Explore</a>
-    </nav>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">Main</div>
+      <div class="sidebar-item active">
+        <span class="sidebar-icon">🏠</span>
+        <span>Home</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-icon">🔍</span>
+        <span>Search</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-icon">📺</span>
+        <span>Feed</span>
+      </div>
+    </div>
+    
+    <div class="sidebar-section">
+      <div class="sidebar-title">Social</div>
+      <div class="sidebar-item">
+        <span class="sidebar-icon">💬</span>
+        <span>Messages</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-icon">🔔</span>
+        <span>Notifications</span>
+      </div>
+    </div>
+    
+    <div class="sidebar-section">
+      <div class="sidebar-title">Account</div>
+      <div class="sidebar-item">
+        <span class="sidebar-icon">⚙️</span>
+        <span>Account Settings</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-icon">🛒</span>
+        <span>Postee Store</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-icon">❓</span>
+        <span>Help</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-icon">🚪</span>
+        <span>Log Out</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Topband with Word of the Day -->
+  <section class="topband">
+    <div class="word-of-day">
+      Creativity
+      <button class="edit-word" id="editWordBtn">Edit</button>
+    </div>
   </section>
 
-  <main class="container">
-    <!-- Profile / Hero Card -->
-    <section class="profile-card" aria-label="Profile">
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Profile Card -->
+    <section class="profile-card">
       <div class="profile-main">
-        <img class="avatar" src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=256&auto=format&fit=crop" alt="User profile picture">
-        <div class="identity">
-          <h1 class="username">@alch.dance</h1>
-          <div class="meta-grid">
-            <div class="meta">
-              <span class="meta-label">Followers</span>
-              <span class="meta-value">12.4k</span>
-            </div>
-            <div class="meta">
-              <span class="meta-label">Following</span>
-              <span class="meta-value">327</span>
-            </div>
-            <div class="meta">
-              <span class="meta-label">Posts</span>
-              <span class="meta-value">238</span>
-            </div>
+        <img class="avatar" src="assets/images/abstract.png" alt="User profile picture">
+        <div class="profile-info">
+          <h1 class="username">
+            @ywk.creator
+            <span class="verified-badge">✓</span>
+          </h1>
+          <div class="bio" id="bioText">
+            Video creator passionate about storytelling through visuals. Making content that inspires and entertains.
           </div>
+          <textarea class="bio-edit" id="bioEdit" maxlength="120" style="display: none;"></textarea>
+          <div class="bio-chars" id="bioChars" style="display: none;">120 characters remaining</div>
+          <button class="btn btn-primary" id="saveBioBtn" style="display: none;">Save Bio</button>
+          <button class="btn btn-secondary" id="cancelBioBtn" style="display: none;">Cancel</button>
+          <button class="btn btn-secondary" id="editBioBtn">Edit Bio</button>
         </div>
-        <div class="context">
-          <div class="row">
-            <span class="pill">Category: Visual Arts</span>
-            <span class="pill">Location: Cape Town</span>
-          </div>
+      </div>
+      
+      <div class="meta-grid">
+        <div class="meta">
+          <div class="meta-label">Followers</div>
+          <div class="meta-value">1.24M</div>
+        </div>
+        <div class="meta">
+          <div class="meta-label">Following</div>
+          <div class="meta-value">327</div>
+        </div>
+        <div class="meta">
+          <div class="meta-label">Posts</div>
+          <div class="meta-value">238</div>
+        </div>
+      </div>
+      
+      <div class="profile-context">
+        <div class="pill">
+          Entertainer, Streamer
+          <span class="edit-icon" data-edit="category">✏️</span>
+        </div>
+        <div class="pill">
+          Soweto, South Africa
+          <span class="edit-icon" data-edit="location">✏️</span>
         </div>
       </div>
     </section>
 
-    <!-- Pinned posts -->
-    <section class="pinned" aria-label="Pinned posts">
-      <h2 class="section-title">Pinned</h2>
+    <!-- Pinned Section -->
+    <section class="pinned">
+      <h2 class="section-title">MY FAVOURITE WORK</h2>
       <div class="pinned-grid">
-        <article class="pin"></article>
-        <article class="pin"></article>
-        <article class="pin"></article>
+        <article class="pin"><img src="assets/images/thumb.png" alt="Pinned work"></article>
+        <article class="pin"><img src="assets/images/IMG_20230718_162953.jpg" alt="Pinned work"></article>
+        <article class="pin"><img src="assets/images/IMG_1708.JPG" alt="Pinned work"></article>
+        <article class="pin"><img src="assets/images/IMG_20230605_163127.jpg" alt="Pinned work"></article>
+        <article class="pin"><img src="assets/images/IMG_20230708_173209.jpg" alt="Pinned work"></article>
+        <article class="pin"><img src="assets/images/IMG_20231027_183312.jpg" alt="Pinned work"></article>
       </div>
     </section>
 
-    <!-- Make a post composer (UI only) -->
-    <section class="composer" aria-label="Create post">
+    <!-- Navigation Menu -->
+    <nav class="nav-menu">
+      <div class="nav-item active" data-target="videos">Videos</div>
+      <div class="nav-item" data-target="peeps">Peeps</div>
+      <div class="nav-item" data-target="posts">Posts</div>
+      <div class="nav-item" data-target="reposts">Reposts</div>
+    </nav>
+
+    <!-- Content Pages -->
+    <div class="content-page active" id="videos">
+      <h2 class="section-title">Long Form Videos</h2>
+      <div class="grid videos-grid">
+        <!-- Video cards will be dynamically inserted here -->
+      </div>
+    </div>
+
+    <div class="content-page" id="peeps">
+      <h2 class="section-title">Short Form Videos</h2>
+      <div class="grid peeps-grid">
+        <!-- Peep cards will be dynamically inserted here -->
+      </div>
+    </div>
+
+    <div class="content-page" id="posts">
+      <h2 class="section-title">Posts</h2>
+      <div class="grid posts-grid">
+        <!-- Post cards will be dynamically inserted here -->
+      </div>
+    </div>
+
+    <div class="content-page" id="reposts">
+      <h2 class="section-title">Reposts</h2>
+      <div class="grid reposts-grid">
+        <!-- Repost cards will be dynamically inserted here -->
+      </div>
+    </div>
+
+    <!-- Composer -->
+    <section class="composer">
       <h2 class="section-title">Create</h2>
       <div class="composer-card">
+        <div class="composer-tabs">
+          <div class="composer-tab active" data-type="video">Video</div>
+          <div class="composer-tab" data-type="peep">Peep</div>
+          <div class="composer-tab" data-type="post">Post</div>
+        </div>
+        
         <textarea class="composer-input" placeholder="Share something breathtaking…"></textarea>
+        
+        <div class="composer-upload" id="uploadArea">
+          <div class="upload-icon">📁</div>
+          <p>Click to upload or drag and drop</p>
+          <p>MP4, MOV, AVI, MKV (max 10GB)</p>
+        </div>
+        
         <div class="composer-toolbar">
-          <button class="tool" aria-label="Attach image" disabled>🖼️</button>
-          <button class="tool" aria-label="Attach video" disabled>📹</button>
-          <button class="tool" aria-label="Tag people" disabled>🏷️</button>
-          <button class="tool" aria-label="More options" disabled>⋯</button>
-          <button class="publish" disabled>Post</button>
+          <div class="media-options">
+            <button class="tool">🖼️</button>
+            <button class="tool">📹</button>
+            <button class="tool">🏷️</button>
+            <button class="tool">⋯</button>
+          </div>
+          <button class="publish">Post</button>
         </div>
-        <p class="composer-hint">Interactivity will be enabled when we add JavaScript.</p>
       </div>
-    </section>
-
-    <!-- Feed -->
-    <section class="feed" aria-label="Feed">
-      <!-- Post card -->
-      <article class="post">
-        <!-- Post header (Instagram-like) -->
-        <div class="post-header">
-          <div class="profile-info">
-            <img class="profile-pic" src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?q=80&w=128&auto=format&fit=crop" alt="User profile">
-            <div class="profile-details">
-              <strong>alch.dance</strong>
-              <div class="music-info">
-                <span class="song-title">Blinding Lights</span>
-                <span class="sep">•</span>
-                <span class="song-artist">The Weeknd</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="post-meta">
-            <time class="timestamp" datetime="2025-08-27T08:00:00Z">2h ago</time>
-            <div class="post-settings" aria-haspopup="menu" aria-expanded="false" role="button" tabindex="0">⋯
-              <!-- Dropdown is present for styling; JS will toggle later -->
-              <ul class="settings-dropdown" role="menu">
-                <li role="menuitem">Edit Post</li>
-                <li role="menuitem">Delete Post</li>
-                <li role="menuitem">See Insight</li>
-                <li role="menuitem">Hide Likes</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <!-- Media carousel (CSS scroll-snap for now) -->
-        <div class="carousel" aria-label="Post media" data-carousel>
-          <figure class="slide">
-            <img src="https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?q=80&w=1200&auto=format&fit=crop" alt="Post image 1">
-          </figure>
-          <figure class="slide">
-            <img src="https://images.unsplash.com/photo-1526318472351-c75fcf070305?q=80&w=1200&auto=format&fit=crop" alt="Post image 2">
-          </figure>
-          <figure class="slide">
-            <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop" alt="Post image 3">
-          </figure>
-          <figure class="slide">
-            <img src="https://images.unsplash.com/photo-1514512364185-4c2b3f2b3a2a?q=80&w=1200&auto=format&fit=crop" alt="Post image 4">
-          </figure>
-        </div>
-
-        <!-- Caption -->
-        <div class="post-body">
-          <p class="caption">
-            I stitched light and motion into this set. Swipe ➡️
-            <span class="tags">#dance #art #postee</span>
-          </p>
-        </div>
-
-        <!-- Actions (static for now) -->
-        <div class="post-actions" role="group" aria-label="Post actions">
-          <button class="action" aria-label="Like" disabled>♡</button>
-          <button class="action" aria-label="Comment" disabled>💬</button>
-          <button class="action" aria-label="Share" disabled>↗</button>
-        </div>
-      </article>
     </section>
   </main>
 
-  <footer class="app-footer">
-    <p>© 2025 Postee</p>
-  </footer>
+  <!-- Modals -->
+  <div class="modal" id="wordModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Word of the Day</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Word or Phrase</label>
+          <input type="text" class="form-input" id="wordInput" maxlength="50">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelWord">Cancel</button>
+        <button class="btn btn-primary" id="saveWord">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="editModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit <span id="editTitle"></span></h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" id="editLabel"></label>
+          <input type="text" class="form-input" id="editInput">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelEdit">Cancel</button>
+        <button class="btn btn-primary" id="saveEdit">Save</button>
+      </div>
+    </div>
+  </div>
+
+
 </body>
 </html>
