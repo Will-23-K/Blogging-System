@@ -1,0 +1,1600 @@
+Backend Integration Guide for Postee
+I'll guide you through implementing a complete backend for your Postee platform. Let's break this down into manageable steps.
+
+Backend Architecture Overview
+text
+Postee Backend
+├── API Layer (REST/GraphQL)
+├── Application Layer (Business Logic)
+├── Data Access Layer (Database Operations)
+├── Authentication Service
+├── File Storage Service
+└── Database
+Step 1: Choose Your Tech Stack
+Option A: JavaScript/Node.js Stack (Recommended)
+Runtime: Node.js
+
+Framework: Express.js or NestJS
+
+Database: MongoDB (with Mongoose) or PostgreSQL (with Sequelize)
+
+Authentication: JWT (JSON Web Tokens)
+
+File Storage: AWS S3, Google Cloud Storage, or Firebase Storage
+
+Deployment: Heroku, DigitalOcean, or AWS
+
+Option B: Python Stack
+Framework: Django or Flask
+
+Database: PostgreSQL (with Django ORM or SQLAlchemy)
+
+Authentication: JWT or Django Authentication
+
+File Storage: Same as above
+
+Option C: PHP Stack
+Framework: Laravel or Symfony
+
+Database: MySQL/MariaDB
+
+Authentication: Laravel Sanctum or JWT
+
+I'll proceed with the Node.js + Express + MongoDB stack as it's most common and has excellent ecosystem support.
+
+Step 2: Project Structure
+Create this backend structure:
+
+text
+backend/
+├── config/
+│   └── database.js
+├── controllers/
+│   ├── authController.js
+│   ├── userController.js
+│   ├── postController.js
+│   └── uploadController.js
+├── middleware/
+│   ├── auth.js
+│   └── upload.js
+├── models/
+│   ├── User.js
+│   ├── Post.js
+│   └── Token.js
+├── routes/
+│   ├── auth.js
+│   ├── users.js
+│   ├── posts.js
+│   └── upload.js
+├── uploads/
+├── utils/
+│   └── helpers.js
+├── package.json
+└── server.js
+Step 3: Implement Core Backend Files
+package.json
+json
+{
+  "name": "postee-backend",
+  "version": "1.0.0",
+  "description": "Backend for Postee video platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.5.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "cloudinary": "^1.40.0",
+    "axios": "^1.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
+server.js
+javascript
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
+
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+const postRoutes = require('./routes/posts');
+const uploadRoutes = require('./routes/upload');
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.static('uploads'));
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/upload', uploadRoutes);
+
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.log(err));
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+models/User.js
+javascript
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    minlength: 3,
+    maxlength: 20
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    lowercase: true
+  },
+  password: {
+    type: String,
+    required: true,
+    minlength: 6
+  },
+  bio: {
+    type: String,
+    maxlength: 120,
+    default: ''
+  },
+  avatar: {
+    type: String,
+    default: ''
+  },
+  category: {
+    type: String,
+    default: 'Creator'
+  },
+  location: {
+    type: String,
+    default: ''
+  },
+  followers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  following: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  wordOfTheDay: {
+    type: String,
+    default: 'Creativity'
+  },
+  lastWordUpdate: {
+    type: Date,
+    default: Date.now
+  }
+}, {
+  timestamps: true
+});
+
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  this.password = await bcrypt.hash(this.password, 12);
+  next();
+});
+
+userSchema.methods.correctPassword = async function(candidatePassword, userPassword) {
+  return await bcrypt.compare(candidatePassword, userPassword);
+};
+
+module.exports = mongoose.model('User', userSchema);
+models/Post.js
+javascript
+const mongoose = require('mongoose');
+
+const postSchema = new mongoose.Schema({
+  content: {
+    type: String,
+    trim: true
+  },
+  media: [{
+    url: String,
+    mediaType: {
+      type: String,
+      enum: ['image', 'video', 'text'],
+      required: true
+    },
+    duration: Number, // for videos
+    thumbnail: String // for videos
+  }],
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  postType: {
+    type: String,
+    enum: ['video', 'peep', 'post', 'repost'],
+    required: true
+  },
+  pinned: {
+    type: Boolean,
+    default: false
+  },
+  views: {
+    type: Number,
+    default: 0
+  },
+  likes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  comments: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    text: String,
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  repostedFrom: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post'
+  }
+}, {
+  timestamps: true
+});
+
+module.exports = mongoose.model('Post', postSchema);
+middleware/auth.js
+javascript
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+
+const protect = async (req, res, next) => {
+  try {
+    let token;
+    
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized to access this route'
+      });
+    }
+    
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await User.findById(decoded.id);
+      next();
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized to access this route'
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Server Error'
+    });
+  }
+};
+
+module.exports = { protect };
+controllers/userController.js
+javascript
+const User = require('../models/User');
+
+// Get user profile
+exports.getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id)
+      .populate('followers', 'username avatar')
+      .populate('following', 'username avatar');
+    
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server Error'
+    });
+  }
+};
+
+// Update user profile
+exports.updateProfile = async (req, res) => {
+  try {
+    const { bio, category, location } = req.body;
+    
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { bio, category, location },
+      { new: true, runValidators: true }
+    );
+    
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server Error'
+    });
+  }
+};
+
+// Update word of the day
+exports.updateWordOfDay = async (req, res) => {
+  try {
+    const { word } = req.body;
+    
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { 
+        wordOfTheDay: word,
+        lastWordUpdate: Date.now()
+      },
+      { new: true }
+    );
+    
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server Error'
+    });
+  }
+};
+
+// Follow/Unfollow user
+exports.toggleFollow = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUser = await User.findById(req.user.id);
+    const targetUser = await User.findById(userId);
+    
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    const isFollowing = currentUser.following.includes(userId);
+    
+    if (isFollowing) {
+      // Unfollow
+      currentUser.following.pull(userId);
+      targetUser.followers.pull(req.user.id);
+    } else {
+      // Follow
+      currentUser.following.push(userId);
+      targetUser.followers.push(req.user.id);
+    }
+    
+    await currentUser.save();
+    await targetUser.save();
+    
+    res.status(200).json({
+      success: true,
+      message: isFollowing ? 'Unfollowed successfully' : 'Followed successfully',
+      data: {
+        followers: targetUser.followers.length,
+        following: currentUser.following.length
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server Error'
+    });
+  }
+};
+routes/users.js
+javascript
+const express = require('express');
+const { getProfile, updateProfile, updateWordOfDay, toggleFollow } = require('../controllers/userController');
+const { protect } = require('../middleware/auth');
+
+const router = express.Router();
+
+router.use(protect);
+
+router.route('/profile')
+  .get(getProfile)
+  .put(updateProfile);
+
+router.route('/word-of-day')
+  .put(updateWordOfDay);
+
+router.route('/follow/:userId')
+  .post(toggleFollow);
+
+module.exports = router;
+Step 4: Frontend-Backend Integration
+Update your frontend JavaScript to connect to the backend:
+
+js/api.js (New File)
+javascript
+const API_BASE_URL = 'http://localhost:5000/api';
+
+// Helper function for API calls
+async function apiCall(endpoint, options = {}) {
+  const token = localStorage.getItem('postee_token');
+  
+  const defaultOptions = {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : ''
+    }
+  };
+  
+  const config = { ...defaultOptions, ...options };
+  
+  if (config.body && typeof config.body !== 'string') {
+    config.body = JSON.stringify(config.body);
+  }
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'API request failed');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('API call error:', error);
+    throw error;
+  }
+}
+
+// Auth API
+export const authAPI = {
+  login: (credentials) => apiCall('/auth/login', {
+    method: 'POST',
+    body: credentials
+  }),
+  register: (userData) => apiCall('/auth/register', {
+    method: 'POST',
+    body: userData
+  })
+};
+
+// User API
+export const userAPI = {
+  getProfile: () => apiCall('/users/profile'),
+  updateProfile: (profileData) => apiCall('/users/profile', {
+    method: 'PUT',
+    body: profileData
+  }),
+  updateWordOfDay: (word) => apiCall('/users/word-of-day', {
+    method: 'PUT',
+    body: { word }
+  }),
+  toggleFollow: (userId) => apiCall(`/users/follow/${userId}`, {
+    method: 'POST'
+  })
+};
+
+// Posts API
+export const postsAPI = {
+  getPosts: (type, page = 1) => apiCall(`/posts?type=${type}&page=${page}`),
+  createPost: (postData) => apiCall('/posts', {
+    method: 'POST',
+    body: postData
+  }),
+  togglePin: (postId) => apiCall(`/posts/${postId}/pin`, {
+    method: 'PUT'
+  }),
+  deletePost: (postId) => apiCall(`/posts/${postId}`, {
+    method: 'DELETE'
+  })
+};
+
+// Upload API
+export const uploadAPI = {
+  uploadMedia: (formData) => {
+    const token = localStorage.getItem('postee_token');
+    return fetch(`${API_BASE_URL}/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: formData
+    }).then(response => response.json());
+  }
+};
+Update Your Frontend Components
+Modify your existing JavaScript files to use the API:
+
+js/app.js (Updated)
+javascript
+import { initModals } from './components/modal.js';
+import { initUpload } from './components/upload.js';
+import { initNavigation } from './components/navigation.js';
+import { generateSampleContent } from './utils/helpers.js';
+import { userAPI, authAPI } from './api.js';
+
+// Main application initialization
+document.addEventListener('DOMContentLoaded', async () => {
+  // Check if user is logged in
+  const token = localStorage.getItem('postee_token');
+  if (token) {
+    try {
+      // Load user data
+      const response = await userAPI.getProfile();
+      const user = response.data;
+      
+      // Update UI with user data
+      updateUIWithUserData(user);
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+      // Redirect to login if token is invalid
+      localStorage.removeItem('postee_token');
+      window.location.href = '/login.html';
+    }
+  } else {
+    // Redirect to login if not authenticated
+    window.location.href = '/login.html';
+  }
+  
+  // Initialize all components
+  initModals();
+  initUpload();
+  initNavigation();
+  
+  // Initialize event listeners
+  initEventListeners();
+  
+  // Generate sample content
+  generateSampleContent();
+});
+
+function updateUIWithUserData(user) {
+  // Update profile information
+  document.querySelector('.username').textContent = `@${user.username}`;
+  document.getElementById('bioText').textContent = user.bio;
+  document.querySelector('.pill:first-child').innerHTML = 
+    `${user.category} <span class="edit-icon" data-edit="category">✏️</span>`;
+  document.querySelector('.pill:last-child').innerHTML = 
+    `${user.location} <span class="edit-icon" data-edit="location">✏️</span>`;
+  
+  // Update word of the day
+  document.querySelector('.word-of-day').innerHTML = 
+    `${user.wordOfTheDay} <button class="edit-word" id="editWordBtn">Edit</button>`;
+  
+  // Update stats
+  document.querySelector('.meta-value:first-child').textContent = 
+    formatNumber(user.followers.length);
+  document.querySelector('.meta-value:nth-child(2)').textContent = 
+    formatNumber(user.following.length);
+}
+
+function initEventListeners() {
+  // Bio Editing
+  const editBioBtn = document.getElementById('editBioBtn');
+  const bioText = document.getElementById('bioText');
+  const bioEdit = document.getElementById('bioEdit');
+  const bioChars = document.getElementById('bioChars');
+  const saveBioBtn = document.getElementById('saveBioBtn');
+  const cancelBioBtn = document.getElementById('cancelBioBtn');
+  
+  if (editBioBtn) {
+    editBioBtn.addEventListener('click', () => {
+      bioText.style.display = 'none';
+      bioEdit.style.display = 'block';
+      bioChars.style.display = 'block';
+      saveBioBtn.style.display = 'inline-block';
+      cancelBioBtn.style.display = 'inline-block';
+      editBioBtn.style.display = 'none';
+      
+      bioEdit.value = bioText.textContent;
+      updateBioChars();
+    });
+  }
+  
+  if (bioEdit) {
+    bioEdit.addEventListener('input', updateBioChars);
+  }
+  
+  function updateBioChars() {
+    const remaining = 120 - bioEdit.value.length;
+    bioChars.textContent = `${remaining} characters remaining`;
+  }
+  
+  if (saveBioBtn) {
+    saveBioBtn.addEventListener('click', async () => {
+      try {
+        await userAPI.updateProfile({ bio: bioEdit.value });
+        bioText.textContent = bioEdit.value;
+        cancelEdit();
+      } catch (error) {
+        alert('Failed to update bio: ' + error.message);
+      }
+    });
+  }
+  
+  if (cancelBioBtn) {
+    cancelBioBtn.addEventListener('click', cancelEdit);
+  }
+  
+  function cancelEdit() {
+    bioText.style.display = 'block';
+    bioEdit.style.display = 'none';
+    bioChars.style.display = 'none';
+    saveBioBtn.style.display = 'none';
+    cancelBioBtn.style.display = 'none';
+    editBioBtn.style.display = 'inline-block';
+  }
+  
+  // Word of the day editing
+  const editWordBtn = document.getElementById('editWordBtn');
+  if (editWordBtn) {
+    editWordBtn.addEventListener('click', async () => {
+      const newWord = prompt('Enter new word of the day:');
+      if (newWord && newWord.trim()) {
+        try {
+          await userAPI.updateWordOfDay(newWord.trim());
+          document.querySelector('.word-of-day').innerHTML = 
+            `${newWord.trim()} <button class="edit-word" id="editWordBtn">Edit</button>`;
+          // Reattach event listener
+          document.getElementById('editWordBtn').addEventListener('click', editWordBtn.click);
+        } catch (error) {
+          alert('Failed to update word of the day: ' + error.message);
+        }
+      }
+    });
+  }
+}
+Step 5: Environment Variables
+Create a .env file in your backend:
+
+text
+NODE_ENV=development
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/postee
+JWT_SECRET=your_super_secret_jwt_key_here
+JWT_EXPIRES_IN=90d
+CLOUDINARY_CLOUD_NAME=your_cloudinary_name
+CLOUDINARY_API_KEY=your_cloudinary_key
+CLOUDINARY_API_SECRET=your_cloudinary_secret
+Step 6: Deployment
+Database Setup: Create a MongoDB database (local or cloud-based like MongoDB Atlas)
+
+File Storage: Set up Cloudinary or AWS S3 for media storage
+
+Backend Deployment: Deploy to Heroku, DigitalOcean, or AWS
+
+Frontend Deployment: Deploy to Netlify, Vercel, or your own server
+
+Environment Configuration: Update API endpoints in your frontend code
+
+Step 7: Authentication Flow
+Create login/register pages:
+
+login.html
+html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Postee</title>
+  <link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <h2>Login to Postee</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+      </form>
+      <p>Don't have an account? <a href="register.html">Register here</a></p>
+    </div>
+  </div>
+  <script src="js/auth.js"></script>
+</body>
+</html>
+js/auth.js
+javascript
+import { authAPI } from './api.js';
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  
+  try {
+    const response = await authAPI.login({ email, password });
+    localStorage.setItem('postee_token', response.token);
+    window.location.href = '/';
+  } catch (error) {
+    alert('Login failed: ' + error.message);
+  }
+});
+Next Steps
+Implement the remaining backend controllers for posts and uploads
+
+Add real-time features with WebSockets for notifications
+
+Implement search functionality
+
+Add email verification and password reset
+
+Set up analytics and monitoring
+
+
+Complete Backend Integration Guide for Postee
+I'll guide you through implementing a complete backend for your Postee platform with detailed notes and tips at every step.
+
+🏗️ Backend Architecture Overview
+text
+Postee Backend
+├── API Layer (REST/GraphQL)
+├── Application Layer (Business Logic)
+├── Data Access Layer (Database Operations)
+├── Authentication Service
+├── File Storage Service
+└── Database
+🛠️ Step 1: Choose Your Tech Stack
+Option A: JavaScript/Node.js Stack (Recommended)
+Runtime: Node.js
+
+Framework: Express.js
+
+Database: MongoDB with Mongoose
+
+Authentication: JWT (JSON Web Tokens)
+
+File Storage: Cloudinary (best for beginners) or AWS S3
+
+Deployment: Heroku (easiest for beginners)
+
+Why this stack?
+
+Full JavaScript stack (consistent language)
+
+Large ecosystem and community support
+
+Great for real-time applications
+
+Easy to find tutorials and help
+
+Option B: Python Stack
+Good if you already know Python
+
+Django has built-in admin panel
+
+Option C: PHP Stack
+Good if you're familiar with PHP
+
+Laravel has elegant syntax
+
+Recommendation: Stick with Node.js + Express + MongoDB
+
+📁 Step 2: Project Structure
+Create this backend structure in a new folder called backend:
+
+text
+backend/
+├── config/
+│   └── database.js
+├── controllers/
+│   ├── authController.js
+│   ├── userController.js
+│   ├── postController.js
+│   └── uploadController.js
+├── middleware/
+│   ├── auth.js
+│   └── upload.js
+├── models/
+│   ├── User.js
+│   ├── Post.js
+│   └── Token.js
+├── routes/
+│   ├── auth.js
+│   ├── users.js
+│   ├── posts.js
+│   └── upload.js
+├── uploads/
+├── utils/
+│   └── helpers.js
+├── .env
+├── .gitignore
+├── package.json
+└── server.js
+Important Notes:
+
+Keep frontend and backend in separate folders
+
+The uploads/ folder is for temporary storage before uploading to cloud
+
+.env stores sensitive data (add to .gitignore)
+
+📦 Step 3: Implement Core Backend Files
+1. package.json
+json
+{
+  "name": "postee-backend",
+  "version": "1.0.0",
+  "description": "Backend for Postee video platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.5.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "cloudinary": "^1.40.0",
+    "axios": "^1.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["video", "social", "platform"],
+  "author": "Your Name",
+  "license": "MIT"
+}
+Installation Tip: Run npm install in the backend folder after creating this file.
+
+2. server.js
+javascript
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+const postRoutes = require('./routes/posts');
+const uploadRoutes = require('./routes/upload');
+
+const app = express();
+
+// Middleware
+app.use(cors({
+  origin: 'http://localhost:3000', // Your frontend URL
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.static('uploads'));
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/upload', uploadRoutes);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ message: 'Server is running!' });
+});
+
+// Handle undefined routes
+app.use('*', (req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
+// Error handling middleware
+app.use((error, req, res, next) => {
+  console.error(error);
+  res.status(500).json({ message: 'Internal server error' });
+});
+
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('✅ MongoDB connected successfully'))
+.catch(err => {
+  console.error('❌ MongoDB connection error:', err);
+  process.exit(1); // Exit if DB connection fails
+});
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
+Important Notes:
+
+Always use dotenv to load environment variables
+
+Use CORS to allow frontend-backend communication
+
+Add error handling middleware
+
+Include a health check endpoint
+
+3. .env File
+text
+NODE_ENV=development
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/postee
+JWT_SECRET=your_super_secret_jwt_key_change_in_production
+JWT_EXPIRES_IN=90d
+CLOUDINARY_CLOUD_NAME=your_cloudinary_name
+CLOUDINARY_API_KEY=your_cloudinary_key
+CLOUDINARY_API_SECRET=your_cloudinary_secret
+FRONTEND_URL=http://localhost:3000
+Security Tip: Never commit .env to version control! Add it to .gitignore.
+
+4. models/User.js
+javascript
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: [true, 'Username is required'],
+    unique: true,
+    trim: true,
+    minlength: [3, 'Username must be at least 3 characters'],
+    maxlength: [20, 'Username cannot exceed 20 characters']
+  },
+  email: {
+    type: String,
+    required: [true, 'Email is required'],
+    unique: true,
+    trim: true,
+    lowercase: true,
+    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+  },
+  password: {
+    type: String,
+    required: [true, 'Password is required'],
+    minlength: [6, 'Password must be at least 6 characters'],
+    select: false // Don't return password in queries unless explicitly asked for
+  },
+  bio: {
+    type: String,
+    maxlength: [120, 'Bio cannot exceed 120 characters'],
+    default: ''
+  },
+  avatar: {
+    type: String,
+    default: 'default-avatar.png'
+  },
+  category: {
+    type: String,
+    default: 'Creator'
+  },
+  location: {
+    type: String,
+    default: ''
+  },
+  followers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  following: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  wordOfTheDay: {
+    type: String,
+    default: 'Creativity'
+  },
+  lastWordUpdate: {
+    type: Date,
+    default: Date.now
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  }
+}, {
+  timestamps: true // Adds createdAt and updatedAt automatically
+});
+
+// Index for better performance
+userSchema.index({ email: 1 });
+userSchema.index({ username: 1 });
+
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+  // Only hash the password if it has been modified (or is new)
+  if (!this.isModified('password')) return next();
+  
+  // Hash the password with cost of 12
+  this.password = await bcrypt.hash(this.password, 12);
+  next();
+});
+
+// Compare password method
+userSchema.methods.correctPassword = async function(candidatePassword, userPassword) {
+  return await bcrypt.compare(candidatePassword, userPassword);
+};
+
+// Remove password from JSON output
+userSchema.methods.toJSON = function() {
+  const user = this.toObject();
+  delete user.password;
+  return user;
+};
+
+module.exports = mongoose.model('User', userSchema);
+Database Tips:
+
+Always add validation to your schemas
+
+Use indexes for frequently queried fields
+
+Never store passwords in plain text
+
+Don't return sensitive data in API responses
+
+5. middleware/auth.js
+javascript
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+
+// Protect routes - verify JWT token
+const protect = async (req, res, next) => {
+  try {
+    let token;
+    
+    // Check if token exists in headers
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized to access this route. No token provided.'
+      });
+    }
+    
+    try {
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      // Get user from token
+      req.user = await User.findById(decoded.id).select('-password');
+      
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Not authorized to access this route. User not found.'
+        });
+      }
+      
+      // Check if user is active
+      if (!req.user.isActive) {
+        return res.status(401).json({
+          success: false,
+          message: 'Account is deactivated.'
+        });
+      }
+      
+      next();
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized to access this route. Invalid token.'
+      });
+    }
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server Error in authentication'
+    });
+  }
+};
+
+// Optional auth - doesn't fail if no token
+const optionalAuth = async (req, res, next) => {
+  try {
+    let token;
+    
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+    
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = await User.findById(decoded.id).select('-password');
+      } catch (error) {
+        // Don't throw error, just continue without user
+        console.log('Optional auth token error:', error.message);
+      }
+    }
+    
+    next();
+  } catch (error) {
+    next();
+  }
+};
+
+// Grant access to specific roles
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: `User role ${req.user.role} is not authorized to access this route`
+      });
+    }
+    next();
+  };
+};
+
+module.exports = { protect, optionalAuth, authorize };
+Security Tips:
+
+Always verify JWT tokens on protected routes
+
+Use different middleware for optional authentication
+
+Implement role-based authorization for admin features
+
+🔄 Step 4: Frontend-Backend Integration
+1. Create js/api.js
+javascript
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://your-production-api.com/api' 
+  : 'http://localhost:5000/api';
+
+// Helper function for API calls
+async function apiCall(endpoint, options = {}) {
+  const token = localStorage.getItem('postee_token');
+  
+  const defaultOptions = {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : ''
+    },
+    credentials: 'include' // Important for cookies if using them
+  };
+  
+  const config = { ...defaultOptions, ...options };
+  
+  if (config.body && typeof config.body !== 'string') {
+    config.body = JSON.stringify(config.body);
+  }
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      // Auto logout if 401 response
+      if (response.status === 401) {
+        localStorage.removeItem('postee_token');
+        localStorage.removeItem('postee_user');
+        window.location.href = '/login.html';
+      }
+      
+      throw new Error(data.message || `API request failed with status ${response.status}`);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('API call error:', error);
+    throw error;
+  }
+}
+
+// Auth API
+export const authAPI = {
+  login: (credentials) => apiCall('/auth/login', {
+    method: 'POST',
+    body: credentials
+  }),
+  register: (userData) => apiCall('/auth/register', {
+    method: 'POST',
+    body: userData
+  }),
+  logout: () => {
+    localStorage.removeItem('postee_token');
+    localStorage.removeItem('postee_user');
+    return apiCall('/auth/logout', { method: 'POST' });
+  },
+  forgotPassword: (email) => apiCall('/auth/forgotpassword', {
+    method: 'POST',
+    body: { email }
+  }),
+  resetPassword: (token, password) => apiCall('/auth/resetpassword', {
+    method: 'PUT',
+    body: { token, password }
+  })
+};
+
+// User API
+export const userAPI = {
+  getProfile: () => apiCall('/users/profile'),
+  updateProfile: (profileData) => apiCall('/users/profile', {
+    method: 'PUT',
+    body: profileData
+  }),
+  updateWordOfDay: (word) => apiCall('/users/word-of-day', {
+    method: 'PUT',
+    body: { word }
+  }),
+  toggleFollow: (userId) => apiCall(`/users/follow/${userId}`, {
+    method: 'POST'
+  }),
+  getFeed: (page = 1) => apiCall(`/users/feed?page=${page}`),
+  searchUsers: (query) => apiCall(`/users/search?q=${encodeURIComponent(query)}`)
+};
+
+// Posts API
+export const postsAPI = {
+  getPosts: (type, page = 1) => apiCall(`/posts?type=${type}&page=${page}`),
+  createPost: (postData) => apiCall('/posts', {
+    method: 'POST',
+    body: postData
+  }),
+  getPost: (postId) => apiCall(`/posts/${postId}`),
+  updatePost: (postId, postData) => apiCall(`/posts/${postId}`, {
+    method: 'PUT',
+    body: postData
+  }),
+  deletePost: (postId) => apiCall(`/posts/${postId}`, {
+    method: 'DELETE'
+  }),
+  togglePin: (postId) => apiCall(`/posts/${postId}/pin`, {
+    method: 'PUT'
+  }),
+  likePost: (postId) => apiCall(`/posts/${postId}/like`, {
+    method: 'POST'
+  }),
+  unlikePost: (postId) => apiCall(`/posts/${postId}/unlike`, {
+    method: 'POST'
+  }),
+  addComment: (postId, text) => apiCall(`/posts/${postId}/comments`, {
+    method: 'POST',
+    body: { text }
+  }),
+  deleteComment: (postId, commentId) => apiCall(`/posts/${postId}/comments/${commentId}`, {
+    method: 'DELETE'
+  })
+};
+
+// Upload API
+export const uploadAPI = {
+  uploadMedia: (formData) => {
+    const token = localStorage.getItem('postee_token');
+    return fetch(`${API_BASE_URL}/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: formData
+    }).then(response => response.json());
+  },
+  deleteMedia: (publicId) => apiCall('/upload', {
+    method: 'DELETE',
+    body: { publicId }
+  })
+};
+
+// Utility function to handle errors
+export const handleApiError = (error, defaultMessage = 'An error occurred') => {
+  const message = error.message || defaultMessage;
+  console.error('API Error:', error);
+  // You could show a notification here
+  alert(message);
+  return { error: message };
+};
+2. Update Your Frontend JavaScript
+javascript
+import { userAPI, authAPI, handleApiError } from './api.js';
+
+// Main application initialization
+document.addEventListener('DOMContentLoaded', async () => {
+  // Check if user is logged in
+  const token = localStorage.getItem('postee_token');
+  const userData = localStorage.getItem('postee_user');
+  
+  if (token && userData) {
+    try {
+      // Verify token is still valid
+      const response = await userAPI.getProfile();
+      const user = response.data;
+      
+      // Update UI with user data
+      updateUIWithUserData(user);
+      
+      // Load user content
+      loadUserContent();
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+      // Redirect to login if token is invalid
+      localStorage.removeItem('postee_token');
+      localStorage.removeItem('postee_user');
+      window.location.href = '/login.html';
+    }
+  } else {
+    // Redirect to login if not authenticated
+    window.location.href = '/login.html';
+  }
+  
+  // Initialize all components
+  initModals();
+  initUpload();
+  initNavigation();
+  
+  // Initialize event listeners
+  initEventListeners();
+});
+
+// Update UI with user data
+function updateUIWithUserData(user) {
+  try {
+    document.querySelector('.username').textContent = `@${user.username}`;
+    document.getElementById('bioText').textContent = user.bio;
+    
+    // Update category and location
+    const categoryPill = document.querySelector('.pill:first-child');
+    const locationPill = document.querySelector('.pill:last-child');
+    
+    if (categoryPill) {
+      categoryPill.innerHTML = `${user.category} <span class="edit-icon" data-edit="category">✏️</span>`;
+    }
+    
+    if (locationPill) {
+      locationPill.innerHTML = `${user.location} <span class="edit-icon" data-edit="location">✏️</span>`;
+    }
+    
+    // Update word of the day
+    const wordElement = document.querySelector('.word-of-day');
+    if (wordElement) {
+      wordElement.innerHTML = `${user.wordOfTheDay} <button class="edit-word" id="editWordBtn">Edit</button>`;
+    }
+    
+    // Update stats
+    const followerCount = document.querySelector('.meta-value:first-child');
+    const followingCount = document.querySelector('.meta-value:nth-child(2)');
+    
+    if (followerCount) {
+      followerCount.textContent = formatNumber(user.followers.length);
+    }
+    
+    if (followingCount) {
+      followingCount.textContent = formatNumber(user.following.length);
+    }
+    
+    // Update avatar if needed
+    const avatar = document.querySelector('.avatar');
+    if (avatar && user.avatar) {
+      avatar.src = user.avatar;
+    }
+    
+    // Store user data for later use
+    localStorage.setItem('postee_user', JSON.stringify(user));
+  } catch (error) {
+    console.error('Error updating UI with user data:', error);
+  }
+}
+
+// Format large numbers
+function formatNumber(num) {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M';
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K';
+  }
+  return num;
+}
+🚀 Step 5: Deployment Guide
+1. Database Setup
+Option A: MongoDB Atlas (Cloud) - Recommended for production
+
+Go to https://www.mongodb.com/atlas
+
+Create a free account
+
+Create a new cluster
+
+Get your connection string
+
+Update MONGODB_URI in your .env file
+
+Option B: Local MongoDB
+
+Install MongoDB Community Edition
+
+Start MongoDB service
+
+Use mongodb://localhost:27017/postee
+
+2. File Storage Setup
+Using Cloudinary (Recommended):
+
+Sign up at https://cloudinary.com/
+
+Get your API keys from dashboard
+
+Update Cloudinary settings in .env
+
+3. Backend Deployment to Heroku
+Install Heroku CLI
+
+Login: heroku login
+
+Create app: heroku create your-app-name
+
+Set environment variables: heroku config:set KEY=value
+
+Deploy: git push heroku main
+
+4. Frontend Deployment to Netlify
+Build your frontend: npm run build
+
+Drag and drop build folder to Netlify
+
+Set environment variables in Netlify dashboard
+
+🔐 Step 6: Authentication Flow
+1. Create Login Page (login.html)
+html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Postee</title>
+  <link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <h2>Login to Postee</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+      </form>
+      <p>Don't have an account? <a href="register.html">Register here</a></p>
+      <p><a href="forgot-password.html">Forgot your password?</a></p>
+    </div>
+  </div>
+  <script type="module" src="js/auth.js"></script>
+</body>
+</html>
+2. Auth JavaScript (js/auth.js)
+javascript
+import { authAPI, handleApiError } from './api.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+  const loginForm = document.getElementById('loginForm');
+  
+  if (loginForm) {
+    loginForm.addEventListener('submit', handleLogin);
+  }
+});
+
+async function handleLogin(e) {
+  e.preventDefault();
+  
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  
+  // Basic validation
+  if (!email || !password) {
+    alert('Please fill in all fields');
+    return;
+  }
+  
+  // Show loading state
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
+  submitBtn.textContent = 'Logging in...';
+  submitBtn.disabled = true;
+  
+  try {
+    const response = await authAPI.login({ email, password });
+    
+    // Store token and user data
+    localStorage.setItem('postee_token', response.token);
+    localStorage.setItem('postee_user', JSON.stringify(response.data.user));
+    
+    // Redirect to home page
+    window.location.href = '/';
+  } catch (error) {
+    handleApiError(error, 'Login failed. Please try again.');
+  } finally {
+    // Reset button state
+    submitBtn.textContent = originalText;
+    submitBtn.disabled = false;
+  }
+}
+💡 Pro Tips for Success
+Start Small: Implement one feature at a time
+
+Test Thoroughly: Write tests for your backend API
+
+Use Version Control: Commit often with descriptive messages
+
+Monitor Performance: Use tools like Winston for logging
+
+Security First: Always validate and sanitize user input
+
+Error Handling: Provide helpful error messages
+
+Documentation: Comment your code and create API documentation
+
+🚨 Common Pitfalls to Avoid
+Not handling errors properly - Always catch errors
+
+Storing passwords in plain text - Always hash passwords
+
+Not validating user input - Always validate on backend
+
+Exposing sensitive data - Don't return passwords in API responses
+
+Not using environment variables - Keep secrets out of code
+
+This comprehensive guide should help you successfully implement a backend for your Postee platform. Take it step by step, and don't hesitate to consult documentation or seek help when needed!
+
+
+
+This backend integration provides a solid foundation for your Postee platform. Each component is modular and can be extended based on your specific requirements.
